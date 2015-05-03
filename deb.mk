@@ -81,7 +81,7 @@ deb-buildstep: deb-setup
 	echo "sudo docker build -t progrium/buildstep /var/lib/buildstep 1> /dev/null" >> /tmp/tmp/post-install
 
 	echo "-> Cloning repository"
-	git clone -q "git@github.com:$(BUILDSTEP_REPO_NAME).git" /tmp/tmp/buildstep > /dev/null
+	git clone -q "https://github.com/$(BUILDSTEP_REPO_NAME).git" /tmp/tmp/buildstep > /dev/null
 	rm -rf /tmp/tmp/buildstep/.git /tmp/tmp/buildstep/.gitignore
 
 	echo "-> Copying files into place"
@@ -133,7 +133,7 @@ deb-pluginhook: deb-setup
 	mkdir -p /tmp/tmp /tmp/build
 
 	echo "-> Cloning repository"
-	git clone -q "git@github.com:$(PLUGINHOOK_REPO_NAME).git" /tmp/tmp/pluginhook > /dev/null
+	git clone -q "https://github.com/$(PLUGINHOOK_REPO_NAME).git" /tmp/tmp/pluginhook > /dev/null
 	rm -rf /tmp/tmp/pluginhook/.git /tmp/tmp/pluginhook/.gitignore
 
 	echo "-> Copying files into place"
@@ -152,7 +152,7 @@ deb-sshcommand: deb-setup
 	mkdir -p /tmp/tmp /tmp/build
 
 	echo "-> Cloning repository"
-	git clone -q "git@github.com:$(SSHCOMMAND_REPO_NAME).git" /tmp/tmp/sshcommand > /dev/null
+	git clone -q "https://github.com/$(SSHCOMMAND_REPO_NAME).git" /tmp/tmp/sshcommand > /dev/null
 	rm -rf /tmp/tmp/sshcommand/.git /tmp/tmp/sshcommand/.gitignore
 
 	echo "-> Copying files into place"
