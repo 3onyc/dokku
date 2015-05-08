@@ -42,7 +42,7 @@ Vagrant::configure("2") do |config|
     vm.vm.network :forwarded_port, guest: 80, host: FORWARDED_PORT
     vm.vm.hostname = "#{DOKKU_DOMAIN}"
     vm.vm.network :private_network, ip: DOKKU_IP
-    vm.vm.provision :shell, :inline => "cd /root/dokku && make install-from-deb"
+    vm.vm.provision :shell, :inline => "cd /root/dokku && make install-from-deb && usermod -a -G docker vagrant"
   end
 
   config.vm.define "build", autostart: false do |vm|
