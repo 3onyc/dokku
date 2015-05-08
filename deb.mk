@@ -118,16 +118,16 @@ deb-dokku: deb-setup
 	mv *.deb /tmp
 
 deb-gems: deb-setup
-	rm -rf /tmp/tmp /tmp/build rubygem-*.deb
-	mkdir -p /tmp/tmp /tmp/build
+	rm -rf /tmp/build
+	mkdir -p /tmp/gems /tmp/build
 
-	gem install --quiet --no-verbose --no-ri --no-rdoc --install-dir /tmp/tmp rack -v 1.5.2 > /dev/null
-	gem install --quiet --no-verbose --no-ri --no-rdoc --install-dir /tmp/tmp rack-protection -v 1.5.3 > /dev/null
-	gem install --quiet --no-verbose --no-ri --no-rdoc --install-dir /tmp/tmp sinatra -v 1.4.5 > /dev/null
-	gem install --quiet --no-verbose --no-ri --no-rdoc --install-dir /tmp/tmp tilt -v 1.4.1 > /dev/null
+	[ -f /tmp/gems/rack-1.5.2.gem ] || (cd /tmp/gems && gem fetch rack -v 1.5.2)
+	[ -f /tmp/gems/rack-protection-1.5.3.gem ] || (cd /tmp/gems && gem fetch rack-protection -v 1.5.3)
+	[ -f /tmp/gems/sinatra-1.4.5.gem ] || (cd /tmp/gems && gem fetch sinatra -v 1.4.5)
+	[ -f /tmp/gems/tilt-1.4.1.gem ] || (cd /tmp/gems && gem fetch tilt -v 1.4.1)
 
-	find /tmp/tmp/cache -name '*.gem' | xargs -rn1 fpm -d ruby -d ruby --prefix /var/lib/gems/1.9.1 -s gem -t deb -a $(GEM_ARCHITECTURE)
-	mv *.deb /tmp
+	find /tmp/gems -name '*.gem' | xargs -rn1 fpm -d ruby -d ruby --package /tmp/build --prefix /var/lib/gems/1.9.1 -s gem -t deb -a $(GEM_ARCHITECTURE)
+	mv /tmp/build/*.deb /tmp
 
 deb-pluginhook: deb-setup
 	rm -rf /tmp/tmp /tmp/build $(PLUGINHOOK_PACKAGE_NAME)
