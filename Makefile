@@ -45,11 +45,11 @@ copyfiles:
 		cp -R plugins/$$plugin ${PLUGINS_PATH} && \
 		touch ${PLUGINS_PATH}/$$plugin/.core; \
 		done
-	$(MAKE) addman
+	$(MAKE) HELP2MAN_OUTPUT=/usr/local/share/man/man1/dokku.1 addman
 
 addman:
-	mkdir -p /usr/local/share/man/man1
-	help2man -Nh help -v version -n "configure and get information from your dokku installation" -o /usr/local/share/man/man1/dokku.1 dokku
+	mkdir -p $(dir $(HELP2MAN_OUTPUT))
+	help2man -Nh help -v version -n "configure and get information from your dokku installation" -o $(HELP2MAN_OUTPUT) 'sudo dokku'
 	mandb
 
 version:
@@ -68,10 +68,10 @@ apt-update:
 	apt-get update
 
 help2man:
-	which help2man 2>&1 >/dev/null || apt-get install -qq -y help2man
+	which help2man 2>&1 >/dev/null || sudo apt-get install -qqy help2man
 
 man-db:
-	which mandb 2>&1 >/dev/null || apt-get install -qq -y man-db
+	which mandb 2>&1 >/dev/null || sudo apt-get install -qqy man-db
 
 sshcommand:
 	wget -qO /usr/local/bin/sshcommand ${SSHCOMMAND_URL}
@@ -83,22 +83,22 @@ pluginhook:
 	dpkg -i /tmp/pluginhook_0.1.0_amd64.deb
 
 docker: aufs
-	apt-get install -qq -y curl
+	sudo apt-get install -qqy curl
 	egrep -i "^docker" /etc/group || groupadd docker
 	usermod -aG docker dokku
 	curl --silent https://get.docker.com/gpg | apt-key add -
 	echo deb http://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list
 	apt-get update
 ifdef DOCKER_VERSION
-	apt-get install -qq -y lxc-docker-${DOCKER_VERSION}
+	sudo apt-get install -qqy lxc-docker-${DOCKER_VERSION}
 else
-	apt-get install -qq -y lxc-docker
+	sudo apt-get install -qqy lxc-docker
 endif
 	sleep 2 # give docker a moment i guess
 
 aufs:
 ifndef CI
-	lsmod | grep aufs || modprobe aufs || apt-get install -qq -y linux-image-extra-`uname -r` > /dev/null
+	lsmod | grep aufs || modprobe aufs || sudo apt-get install -qqy linux-image-extra-`uname -r` > /dev/null
 endif
 
 stack:
@@ -120,7 +120,7 @@ count:
 	@find tests -type f | xargs cat | egrep -v "^$$" |wc -l
 
 dokku-installer:
-	which ruby 2>&1 >/dev/null || apt-get install -qq -y ruby
+	which ruby 2>&1 >/dev/null || sudo apt-get install -qqy ruby
 	test -f /var/lib/dokku/.dokku-installer-created || gem install rack -v 1.5.2 --no-rdoc --no-ri
 	test -f /var/lib/dokku/.dokku-installer-created || gem install rack-protection -v 1.5.3 --no-rdoc --no-ri
 	test -f /var/lib/dokku/.dokku-installer-created || gem install sinatra -v 1.4.5 --no-rdoc --no-ri
