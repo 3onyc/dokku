@@ -30,8 +30,8 @@ GOPATH = /home/vagrant/gocode
 
 install-from-deb:
 	echo "--> Initial apt-get update"
-	sudo apt-get update > /dev/null
-	sudo apt-get install -y apt-transport-https curl
+	sudo apt-get update -qqy
+	sudo apt-get install -qqy apt-transport-https curl
 
 	echo "--> Installing docker gpg key"
 	curl --silent https://get.docker.com/gpg 2> /dev/null | apt-key add - 2>&1 >/dev/null
@@ -108,8 +108,7 @@ deb-dokku: deb-setup
 	cp -r plugins /tmp/build/var/lib/dokku
 	find plugins/ -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | while read plugin; do touch /tmp/build/var/lib/dokku/plugins/$$plugin/.core; done
 	$(MAKE) help2man
-	$(MAKE) addman
-	cp /usr/local/share/man/man1/dokku.1 /tmp/build/usr/local/share/man/man1/dokku.1
+	$(MAKE) HELP2MAN_OUTPUT=/tmp/build/usr/local/share/man/man1/dokku.1 addman
 	cp contrib/dokku-installer.rb /tmp/build/usr/local/share/dokku/contrib
 	git describe --tags > /tmp/build/var/lib/dokku/VERSION
 	cat /tmp/build/var/lib/dokku/VERSION | cut -d '-' -f 1 | cut -d 'v' -f 2 > /tmp/build/var/lib/dokku/STABLE_VERSION
