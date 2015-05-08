@@ -97,7 +97,7 @@ deb-buildstep: deb-setup
 	fpm --force -t deb -s dir -C /tmp/build -n buildstep -v $(BUILDSTEP_VERSION) -a $(BUILDSTEP_ARCHITECTURE) -p /vagrant/pkg/$(BUILDSTEP_PACKAGE_NAME) --deb-pre-depends 'lxc-docker >= 1.4.0' --after-install /tmp/tmp/post-install --url "https://github.com/$(BUILDSTEP_REPO_NAME)" --description $(BUILDSTEP_DESCRIPTION) --license 'MIT License' .
 
 deb-dokku: deb-setup
-	rm -rf /tmp/tmp /tmp/build && mkdir -p /tmp/tmp /tmp/build
+	rm -rf /tmp/build && mkdir -p /tmp/build
 
 	cp -r debian /tmp/build/DEBIAN
 	mkdir -p /tmp/build/usr/local/bin
@@ -118,7 +118,7 @@ deb-dokku: deb-setup
 	dpkg-deb --build /tmp/build "/vagrant/pkg/dokku_`cat /tmp/build/var/lib/dokku/STABLE_VERSION`_$(DOKKU_ARCHITECTURE).deb"
 
 deb-gems: deb-setup
-	rm -rf /tmp/tmp /tmp/build && mkdir -p /tmp/tmp /tmp/build
+	rm -rf /tmp/build && mkdir -p /tmp/build
 
 	[ -f /tmp/gems/rack-1.5.2.gem ] || (cd /tmp/gems && gem fetch rack -v 1.5.2)
 	[ -f /tmp/gems/rack-protection-1.5.3.gem ] || (cd /tmp/gems && gem fetch rack-protection -v 1.5.3)
@@ -128,7 +128,7 @@ deb-gems: deb-setup
 	find /tmp/gems -name '*.gem' | xargs -rn1 fpm --force -d ruby -d ruby --package /vagrant/pkg --prefix /var/lib/gems/1.9.1 -s gem -t deb -a $(GEM_ARCHITECTURE)
 
 deb-pluginhook: deb-setup
-	rm -rf /tmp/tmp /tmp/build && mkdir -p /tmp/tmp /tmp/build
+	rm -rf /tmp/build && mkdir -p /tmp/build
 
 	echo "-> Cloning repository"
 	[ -d /tmp/src/pluginhook ] || git clone -q "https://github.com/$(PLUGINHOOK_REPO_NAME).git" /tmp/src/pluginhook > /dev/null
@@ -147,7 +147,7 @@ deb-pluginhook: deb-setup
 	fpm --force -t deb -s dir -C /tmp/build -n pluginhook -v $(PLUGINHOOK_VERSION) -a $(PLUGINHOOK_ARCHITECTURE) -p /vagrant/pkg/$(PLUGINHOOK_PACKAGE_NAME) --url "https://github.com/$(PLUGINHOOK_REPO_NAME)" --description $(PLUGINHOOK_DESCRIPTION) --license 'MIT License' .
 
 deb-sshcommand: deb-setup
-	rm -rf /tmp/tmp /tmp/build && mkdir -p /tmp/tmp /tmp/build
+	rm -rf /tmp/build && mkdir -p /tmp/build
 
 	echo "-> Cloning repository"
 	[ -d /tmp/src/sshcommand ] || git clone -q "https://github.com/$(SSHCOMMAND_REPO_NAME).git" /tmp/src/sshcommand > /dev/null
