@@ -26,7 +26,7 @@ GOROOT = /usr/lib/go
 GOBIN = /usr/bin/go
 GOPATH = /home/vagrant/gocode
 
-.PHONY: install-from-deb deb-all deb-buildstep deb-dokku deb-gems deb-pluginhook deb-setup deb-sshcommand
+.PHONY: install-from-deb deb-all deb-buildstep deb-dokku deb-pluginhook deb-setup deb-sshcommand
 
 install-from-deb:
 	echo "--> Initial apt-get update"
@@ -54,14 +54,14 @@ install-from-deb:
 
 	echo "--> Done!"
 
-deb-all: deb-buildstep deb-dokku deb-gems deb-pluginhook deb-sshcommand
+deb-all: deb-buildstep deb-dokku deb-pluginhook deb-sshcommand
 	mv /tmp/*.deb .
 	echo "Done"
 
 deb-setup:
 	echo "-> Updating deb repository and installing build requirements"
 	sudo apt-get update > /dev/null
-	sudo apt-get install -qq -y gcc git ruby1.9.1-dev 2>&1 > /dev/null
+	sudo apt-get install -qq -y gcc git golang ruby1.9.1-dev 2>&1 > /dev/null
 	command -v fpm > /dev/null || sudo gem install fpm --no-ri --no-rdoc
 	ssh -o StrictHostKeyChecking=no git@github.com || true
 
@@ -108,24 +108,12 @@ deb-dokku: deb-setup
 	$(MAKE) help2man
 	$(MAKE) addman
 	cp /usr/local/share/man/man1/dokku.1 /tmp/build/usr/local/share/man/man1/dokku.1
-	cp contrib/dokku-installer.rb /tmp/build/usr/local/share/dokku/contrib
+	go build -o /tmp/build/usr/local/share/dokku/contrib/dokku-installer contrib/dokku-installer.go
 	git describe --tags > /tmp/build/var/lib/dokku/VERSION
 	cat /tmp/build/var/lib/dokku/VERSION | cut -d '-' -f 1 | cut -d 'v' -f 2 > /tmp/build/var/lib/dokku/STABLE_VERSION
 	git rev-parse HEAD > /tmp/build/var/lib/dokku/GIT_REV
 	sed -i "s/^Version: .*/Version: `cat /tmp/build/var/lib/dokku/STABLE_VERSION`/g" /tmp/build/DEBIAN/control
 	dpkg-deb --build /tmp/build "/vagrant/dokku_`cat /tmp/build/var/lib/dokku/STABLE_VERSION`_$(DOKKU_ARCHITECTURE).deb"
-	mv *.deb /tmp
-
-deb-gems: deb-setup
-	rm -rf /tmp/tmp /tmp/build rubygem-*.deb
-	mkdir -p /tmp/tmp /tmp/build
-
-	gem install --quiet --no-verbose --no-ri --no-rdoc --install-dir /tmp/tmp rack -v 1.5.2 > /dev/null
-	gem install --quiet --no-verbose --no-ri --no-rdoc --install-dir /tmp/tmp rack-protection -v 1.5.3 > /dev/null
-	gem install --quiet --no-verbose --no-ri --no-rdoc --install-dir /tmp/tmp sinatra -v 1.4.5 > /dev/null
-	gem install --quiet --no-verbose --no-ri --no-rdoc --install-dir /tmp/tmp tilt -v 1.4.1 > /dev/null
-
-	find /tmp/tmp/cache -name '*.gem' | xargs -rn1 fpm -d ruby -d ruby --prefix /var/lib/gems/1.9.1 -s gem -t deb -a $(GEM_ARCHITECTURE)
 	mv *.deb /tmp
 
 deb-pluginhook: deb-setup
@@ -138,7 +126,7 @@ deb-pluginhook: deb-setup
 
 	echo "-> Copying files into place"
 	mkdir -p /tmp/build/usr/local/bin $(GOPATH)
-	sudo apt-get install -qq -y git golang mercurial 2>&1 > /dev/null
+	sudo apt-get install -qq -y git mercurial 2>&1 > /dev/null
 	export PATH=$(PATH):$(GOROOT)/bin:$(GOPATH)/bin && export GOROOT=$(GOROOT) && export GOPATH=$(GOPATH) && go get "code.google.com/p/go.crypto/ssh/terminal"
 	export PATH=$(PATH):$(GOROOT)/bin:$(GOPATH)/bin && export GOROOT=$(GOROOT) && export GOPATH=$(GOPATH) && cd /tmp/tmp/pluginhook && go build -o pluginhook
 	mv /tmp/tmp/pluginhook/pluginhook /tmp/build/usr/local/bin/pluginhook
