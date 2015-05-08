@@ -26,7 +26,8 @@ GOROOT = /usr/lib/go
 GOBIN = /usr/bin/go
 GOPATH = /home/vagrant/gocode
 
-.PHONY: install-from-deb deb-all deb-buildstep deb-dokku deb-gems deb-pluginhook deb-setup deb-sshcommand
+.PHONY: install-from-deb deb-all deb-buildstep deb-dokku deb-gems deb-pluginhook deb-setup deb-sshcommand \
+		deb-clean-all deb-clean-src deb-clean-pkg deb-clean-build deb-clean-gems
 
 install-from-deb:
 	echo "--> Initial apt-get update"
@@ -160,3 +161,14 @@ deb-sshcommand: deb-setup
 
 	echo "-> Creating $(SSHCOMMAND_PACKAGE_NAME)"
 	fpm --force -t deb -s dir -C /tmp/build -n sshcommand -v $(SSHCOMMAND_VERSION) -a $(SSHCOMMAND_ARCHITECTURE) -p /vagrant/pkg/$(SSHCOMMAND_PACKAGE_NAME) --url "https://github.com/$(SSHCOMMAND_REPO_NAME)" --description $(SSHCOMMAND_DESCRIPTION) --license 'MIT License' .
+
+deb-clean-src:
+	rm -rf /tmp/src
+deb-clean-pkg:
+	rm -rf /tmp/deb
+deb-clean-gems:
+	rm -rf /tmp/gems
+deb-clean-build:
+	rm -rf /tmp/tmp
+	rm -rf /tmp/build
+deb-clean-all: deb-clean-src deb-clean-pkg deb-clean-build deb-clean-gems
