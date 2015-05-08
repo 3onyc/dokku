@@ -60,9 +60,11 @@ deb-all: deb-buildstep deb-dokku deb-gems deb-pluginhook deb-sshcommand
 
 deb-setup:
 	echo "-> Updating deb repository and installing build requirements"
-	sudo apt-get update > /dev/null
-	sudo apt-get install -qq -y gcc git ruby1.9.1-dev 2>&1 > /dev/null
-	command -v fpm > /dev/null || sudo gem install fpm --no-ri --no-rdoc
+	[ -n "$(SKIP_APT_UPDATE)" ] || sudo apt-get update > /dev/null
+	[ -f /usr/include/ruby-1.9.1/ruby.h ] || sudo apt-get install -qqy ruby1.9.1-dev
+	which git 2>&1 >/dev/null || sudo apt-get install -qqy git
+	which gcc 2>&1 >/dev/null || sudo apt-get install -qqy gcc
+	which fpm 2>&1 >/dev/null || sudo gem install fpm --no-ri --no-rdoc
 	ssh -o StrictHostKeyChecking=no git@github.com || true
 
 deb-buildstep: deb-setup
@@ -138,7 +140,9 @@ deb-pluginhook: deb-setup
 
 	echo "-> Copying files into place"
 	mkdir -p /tmp/build/usr/local/bin $(GOPATH)
-	sudo apt-get install -qq -y git golang mercurial 2>&1 > /dev/null
+	which git 2>&1 >/dev/null || sudo apt-get install -qqy git
+	which hg 2>&1 >/dev/null || sudo apt-get install -qqy mercurial
+	which go 2>&1 >/dev/null || sudo apt-get install -qqy golang
 	export PATH=$(PATH):$(GOROOT)/bin:$(GOPATH)/bin && export GOROOT=$(GOROOT) && export GOPATH=$(GOPATH) && go get "code.google.com/p/go.crypto/ssh/terminal"
 	export PATH=$(PATH):$(GOROOT)/bin:$(GOPATH)/bin && export GOROOT=$(GOROOT) && export GOPATH=$(GOPATH) && cd /tmp/tmp/pluginhook && go build -o pluginhook
 	mv /tmp/tmp/pluginhook/pluginhook /tmp/build/usr/local/bin/pluginhook

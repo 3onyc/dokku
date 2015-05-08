@@ -68,10 +68,10 @@ apt-update:
 	apt-get update
 
 help2man:
-	apt-get install -qq -y help2man
+	which help2man 2>&1 >/dev/null || apt-get install -qq -y help2man
 
 man-db:
-	apt-get install -qq -y man-db
+	which mandb 2>&1 >/dev/null || apt-get install -qq -y man-db
 
 sshcommand:
 	wget -qO /usr/local/bin/sshcommand ${SSHCOMMAND_URL}
@@ -120,7 +120,7 @@ count:
 	@find tests -type f | xargs cat | egrep -v "^$$" |wc -l
 
 dokku-installer:
-	apt-get install -qq -y ruby
+	which ruby 2>&1 >/dev/null || apt-get install -qq -y ruby
 	test -f /var/lib/dokku/.dokku-installer-created || gem install rack -v 1.5.2 --no-rdoc --no-ri
 	test -f /var/lib/dokku/.dokku-installer-created || gem install rack-protection -v 1.5.3 --no-rdoc --no-ri
 	test -f /var/lib/dokku/.dokku-installer-created || gem install sinatra -v 1.4.5 --no-rdoc --no-ri
