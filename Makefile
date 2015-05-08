@@ -102,7 +102,7 @@ ifndef CI
 endif
 
 stack:
-ifeq ($(shell test -e /var/run/docker.sock && touch -a -c /var/run/docker.sock && echo $$?),0)
+ifeq ($(shell docker ps 2>&1 >/dev/null; echo $$?),0)
 	@echo "Start building buildstep"
 ifdef BUILD_STACK
 	@docker images | grep progrium/buildstep || (git clone ${STACK_URL} /tmp/buildstep && docker build -t progrium/buildstep /tmp/buildstep && rm -rf /tmp/buildstep)
