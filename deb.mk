@@ -55,12 +55,12 @@ install-from-deb:
 	echo "--> Done!"
 
 deb-all: deb-buildstep deb-dokku deb-gems deb-pluginhook deb-sshcommand
-	mv /tmp/*.deb .
 	echo "Done"
 
 deb-setup:
 	echo "-> Updating deb repository and installing build requirements"
 	[ -n "$(SKIP_APT_UPDATE)" ] || sudo apt-get update > /dev/null
+
 	[ -f /usr/include/ruby-1.9.1/ruby.h ] || sudo apt-get install -qqy ruby1.9.1-dev
 	which git 2>&1 >/dev/null || sudo apt-get install -qqy git
 	which gcc 2>&1 >/dev/null || sudo apt-get install -qqy gcc
@@ -69,9 +69,10 @@ deb-setup:
 	## Disabled for now, not sure what original goal was
 	# ssh -o StrictHostKeyChecking=no git@github.com || true
 
+	mkdir -p /vagrant/pkg /tmp/gems /tmp/src
+
 deb-buildstep: deb-setup
-	rm -rf /tmp/tmp /tmp/build $(BUILDSTEP_PACKAGE_NAME)
-	mkdir -p /tmp/tmp /tmp/build
+	rm -rf /tmp/tmp /tmp/build && mkdir -p /tmp/tmp /tmp/build
 
 	echo "-> Creating deb files"
 	echo "#!/usr/bin/env bash" >> /tmp/tmp/post-install
@@ -85,20 +86,18 @@ deb-buildstep: deb-setup
 	echo "sudo docker build -t progrium/buildstep /var/lib/buildstep 1> /dev/null" >> /tmp/tmp/post-install
 
 	echo "-> Cloning repository"
-	git clone -q "https://github.com/$(BUILDSTEP_REPO_NAME).git" /tmp/tmp/buildstep > /dev/null
-	rm -rf /tmp/tmp/buildstep/.git /tmp/tmp/buildstep/.gitignore
+	[ -d /tmp/src/buildstep ] || git clone -q "https://github.com/$(BUILDSTEP_REPO_NAME).git" /tmp/src/buildstep > /dev/null
+	rm -rf /tmp/src/buildstep/.git /tmp/src/buildstep/.gitignore
 
 	echo "-> Copying files into place"
 	mkdir -p "/tmp/build/var/lib"
-	cp -rf /tmp/tmp/buildstep /tmp/build/var/lib/buildstep
+	cp -rf /tmp/src/buildstep /tmp/build/var/lib/buildstep
 
 	echo "-> Creating $(BUILDSTEP_PACKAGE_NAME)"
-	sudo fpm -t deb -s dir -C /tmp/build -n buildstep -v $(BUILDSTEP_VERSION) -a $(BUILDSTEP_ARCHITECTURE) -p $(BUILDSTEP_PACKAGE_NAME) --deb-pre-depends 'lxc-docker >= 1.4.0' --after-install /tmp/tmp/post-install --url "https://github.com/$(BUILDSTEP_REPO_NAME)" --description $(BUILDSTEP_DESCRIPTION) --license 'MIT License' .
-	mv *.deb /tmp
+	fpm --force -t deb -s dir -C /tmp/build -n buildstep -v $(BUILDSTEP_VERSION) -a $(BUILDSTEP_ARCHITECTURE) -p /vagrant/pkg/$(BUILDSTEP_PACKAGE_NAME) --deb-pre-depends 'lxc-docker >= 1.4.0' --after-install /tmp/tmp/post-install --url "https://github.com/$(BUILDSTEP_REPO_NAME)" --description $(BUILDSTEP_DESCRIPTION) --license 'MIT License' .
 
 deb-dokku: deb-setup
-	rm -rf /tmp/tmp /tmp/build dokku_*_$(DOKKU_ARCHITECTURE).deb
-	mkdir -p /tmp/tmp /tmp/build
+	rm -rf /tmp/tmp /tmp/build && mkdir -p /tmp/tmp /tmp/build
 
 	cp -r debian /tmp/build/DEBIAN
 	mkdir -p /tmp/build/usr/local/bin
@@ -116,28 +115,24 @@ deb-dokku: deb-setup
 	cat /tmp/build/var/lib/dokku/VERSION | cut -d '-' -f 1 | cut -d 'v' -f 2 > /tmp/build/var/lib/dokku/STABLE_VERSION
 	git rev-parse HEAD > /tmp/build/var/lib/dokku/GIT_REV
 	sed -i "s/^Version: .*/Version: `cat /tmp/build/var/lib/dokku/STABLE_VERSION`/g" /tmp/build/DEBIAN/control
-	dpkg-deb --build /tmp/build "/vagrant/dokku_`cat /tmp/build/var/lib/dokku/STABLE_VERSION`_$(DOKKU_ARCHITECTURE).deb"
-	mv *.deb /tmp
+	dpkg-deb --build /tmp/build "/vagrant/pkg/dokku_`cat /tmp/build/var/lib/dokku/STABLE_VERSION`_$(DOKKU_ARCHITECTURE).deb"
 
 deb-gems: deb-setup
-	rm -rf /tmp/build
-	mkdir -p /tmp/gems /tmp/build
+	rm -rf /tmp/tmp /tmp/build && mkdir -p /tmp/tmp /tmp/build
 
 	[ -f /tmp/gems/rack-1.5.2.gem ] || (cd /tmp/gems && gem fetch rack -v 1.5.2)
 	[ -f /tmp/gems/rack-protection-1.5.3.gem ] || (cd /tmp/gems && gem fetch rack-protection -v 1.5.3)
 	[ -f /tmp/gems/sinatra-1.4.5.gem ] || (cd /tmp/gems && gem fetch sinatra -v 1.4.5)
 	[ -f /tmp/gems/tilt-1.4.1.gem ] || (cd /tmp/gems && gem fetch tilt -v 1.4.1)
 
-	find /tmp/gems -name '*.gem' | xargs -rn1 fpm -d ruby -d ruby --package /tmp/build --prefix /var/lib/gems/1.9.1 -s gem -t deb -a $(GEM_ARCHITECTURE)
-	mv /tmp/build/*.deb /tmp
+	find /tmp/gems -name '*.gem' | xargs -rn1 fpm --force -d ruby -d ruby --package /vagrant/pkg --prefix /var/lib/gems/1.9.1 -s gem -t deb -a $(GEM_ARCHITECTURE)
 
 deb-pluginhook: deb-setup
-	rm -rf /tmp/tmp /tmp/build $(PLUGINHOOK_PACKAGE_NAME)
-	mkdir -p /tmp/tmp /tmp/build
+	rm -rf /tmp/tmp /tmp/build && mkdir -p /tmp/tmp /tmp/build
 
 	echo "-> Cloning repository"
-	git clone -q "https://github.com/$(PLUGINHOOK_REPO_NAME).git" /tmp/tmp/pluginhook > /dev/null
-	rm -rf /tmp/tmp/pluginhook/.git /tmp/tmp/pluginhook/.gitignore
+	[ -d /tmp/src/pluginhook ] || git clone -q "https://github.com/$(PLUGINHOOK_REPO_NAME).git" /tmp/src/pluginhook > /dev/null
+	rm -rf /tmp/src/pluginhook/.git /tmp/src/pluginhook/.gitignore
 
 	echo "-> Copying files into place"
 	mkdir -p /tmp/build/usr/local/bin $(GOPATH)
@@ -145,26 +140,23 @@ deb-pluginhook: deb-setup
 	which hg 2>&1 >/dev/null || sudo apt-get install -qqy mercurial
 	which go 2>&1 >/dev/null || sudo apt-get install -qqy golang
 	export PATH=$(PATH):$(GOROOT)/bin:$(GOPATH)/bin && export GOROOT=$(GOROOT) && export GOPATH=$(GOPATH) && go get "code.google.com/p/go.crypto/ssh/terminal"
-	export PATH=$(PATH):$(GOROOT)/bin:$(GOPATH)/bin && export GOROOT=$(GOROOT) && export GOPATH=$(GOPATH) && cd /tmp/tmp/pluginhook && go build -o pluginhook
-	mv /tmp/tmp/pluginhook/pluginhook /tmp/build/usr/local/bin/pluginhook
+	export PATH=$(PATH):$(GOROOT)/bin:$(GOPATH)/bin && export GOROOT=$(GOROOT) && export GOPATH=$(GOPATH) && cd /tmp/src/pluginhook && go build -o pluginhook
+	mv /tmp/src/pluginhook/pluginhook /tmp/build/usr/local/bin/pluginhook
 
 	echo "-> Creating $(PLUGINHOOK_PACKAGE_NAME)"
-	sudo fpm -t deb -s dir -C /tmp/build -n pluginhook -v $(PLUGINHOOK_VERSION) -a $(PLUGINHOOK_ARCHITECTURE) -p $(PLUGINHOOK_PACKAGE_NAME) --url "https://github.com/$(PLUGINHOOK_REPO_NAME)" --description $(PLUGINHOOK_DESCRIPTION) --license 'MIT License' .
-	mv *.deb /tmp
+	fpm --force -t deb -s dir -C /tmp/build -n pluginhook -v $(PLUGINHOOK_VERSION) -a $(PLUGINHOOK_ARCHITECTURE) -p /vagrant/pkg/$(PLUGINHOOK_PACKAGE_NAME) --url "https://github.com/$(PLUGINHOOK_REPO_NAME)" --description $(PLUGINHOOK_DESCRIPTION) --license 'MIT License' .
 
 deb-sshcommand: deb-setup
-	rm -rf /tmp/tmp /tmp/build $(SSHCOMMAND_PACKAGE_NAME)
-	mkdir -p /tmp/tmp /tmp/build
+	rm -rf /tmp/tmp /tmp/build && mkdir -p /tmp/tmp /tmp/build
 
 	echo "-> Cloning repository"
-	git clone -q "https://github.com/$(SSHCOMMAND_REPO_NAME).git" /tmp/tmp/sshcommand > /dev/null
-	rm -rf /tmp/tmp/sshcommand/.git /tmp/tmp/sshcommand/.gitignore
+	[ -d /tmp/src/sshcommand ] || git clone -q "https://github.com/$(SSHCOMMAND_REPO_NAME).git" /tmp/src/sshcommand > /dev/null
+	rm -rf /tmp/src/sshcommand/.git /tmp/src/sshcommand/.gitignore
 
 	echo "-> Copying files into place"
 	mkdir -p "/tmp/build/usr/local/bin"
-	cp /tmp/tmp/sshcommand/sshcommand /tmp/build/usr/local/bin/sshcommand
+	cp /tmp/src/sshcommand/sshcommand /tmp/build/usr/local/bin/sshcommand
 	chmod +x /tmp/build/usr/local/bin/sshcommand
 
 	echo "-> Creating $(SSHCOMMAND_PACKAGE_NAME)"
-	sudo fpm -t deb -s dir -C /tmp/build -n sshcommand -v $(SSHCOMMAND_VERSION) -a $(SSHCOMMAND_ARCHITECTURE) -p $(SSHCOMMAND_PACKAGE_NAME) --url "https://github.com/$(SSHCOMMAND_REPO_NAME)" --description $(SSHCOMMAND_DESCRIPTION) --license 'MIT License' .
-	mv *.deb /tmp
+	fpm --force -t deb -s dir -C /tmp/build -n sshcommand -v $(SSHCOMMAND_VERSION) -a $(SSHCOMMAND_ARCHITECTURE) -p /vagrant/pkg/$(SSHCOMMAND_PACKAGE_NAME) --url "https://github.com/$(SSHCOMMAND_REPO_NAME)" --description $(SSHCOMMAND_DESCRIPTION) --license 'MIT License' .
