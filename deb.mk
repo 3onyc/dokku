@@ -65,7 +65,9 @@ deb-setup:
 	which git 2>&1 >/dev/null || sudo apt-get install -qqy git
 	which gcc 2>&1 >/dev/null || sudo apt-get install -qqy gcc
 	which fpm 2>&1 >/dev/null || sudo gem install fpm --no-ri --no-rdoc
-	ssh -o StrictHostKeyChecking=no git@github.com || true
+
+	## Disabled for now, not sure what original goal was
+	# ssh -o StrictHostKeyChecking=no git@github.com || true
 
 deb-buildstep: deb-setup
 	rm -rf /tmp/tmp /tmp/build $(BUILDSTEP_PACKAGE_NAME)
