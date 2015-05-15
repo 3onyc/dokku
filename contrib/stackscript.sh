@@ -1,6 +1,6 @@
 #!/bin/bash
 # <UDF name="hostname" default="" label="Hostname for dokku instance" example="example.com">
-# <UDF name="ssh_key" default="" label="Public SSH Key for root user" example="Sets the root user's public ssh key, which is also automatically imported into the dokku installer">
+# <UDF name="ssh_key" default="" label="Public SSH Key for root user" example="Sets the root user's public ssh key">
 # <UDF name="notify_email" default="" Label="Send Finish Notification To" example="Email address to send notification to when finished." />
 
 function logit {

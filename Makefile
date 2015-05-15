@@ -14,7 +14,7 @@ ifeq (vagrant-dokku,$(firstword $(MAKECMDGOALS)))
   $(eval $(RUN_ARGS):;@:)
 endif
 
-.PHONY: all apt-update install copyfiles man-db version plugins dependencies sshcommand pluginhook docker aufs stack count dokku-installer vagrant-acl-add vagrant-dokku
+.PHONY: all apt-update install copyfiles man-db version plugins dependencies sshcommand pluginhook docker aufs stack count vagrant-acl-add vagrant-dokku
 
 include tests.mk
 include deb.mk
@@ -119,20 +119,8 @@ count:
 	@echo "Test lines:"
 	@find tests -type f | xargs cat | egrep -v "^$$" |wc -l
 
-dokku-installer:
-	apt-get install -qq -y ruby
-	test -f /var/lib/dokku/.dokku-installer-created || gem install rack -v 1.5.2 --no-rdoc --no-ri
-	test -f /var/lib/dokku/.dokku-installer-created || gem install rack-protection -v 1.5.3 --no-rdoc --no-ri
-	test -f /var/lib/dokku/.dokku-installer-created || gem install sinatra -v 1.4.5 --no-rdoc --no-ri
-	test -f /var/lib/dokku/.dokku-installer-created || gem install tilt -v 1.4.1 --no-rdoc --no-ri
-	test -f /var/lib/dokku/.dokku-installer-created || ruby contrib/dokku-installer.rb onboot
-	test -f /var/lib/dokku/.dokku-installer-created || service dokku-installer start
-	test -f /var/lib/dokku/.dokku-installer-created || service nginx reload
-	test -f /var/lib/dokku/.dokku-installer-created || touch /var/lib/dokku/.dokku-installer-created
-
 vagrant-acl-add:
 	vagrant ssh -- sudo sshcommand acl-add dokku $(USER)
 
 vagrant-dokku:
 	vagrant ssh -- "sudo -H -u root bash -c 'dokku $(RUN_ARGS)'"
-
